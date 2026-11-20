@@ -1,0 +1,150 @@
+{
+  "category": "all",
+  "findings": [
+    {
+      "confidence": "high",
+      "explanation": "enable_confidential_compute defaults to true, which sets confidential_instance_config.enable_confidential_compute (AMD SEV) on the template, but machine_type defaults to e2-standard-2. AMD SEV Confidential VMs are only supported on the N2D, C2D, C3D and C4D series, so a caller who takes the defaults gets a template no instance can be created from (and the instance from template fails at apply). Each attribute is valid on its own, so no single-attribute rule sees the clash.",
+      "file": "variables.tf",
+      "first_seen": "2026-11-20",
+      "fixable": false,
+      "id": "HOLDEN_AI_001",
+      "last_seen": "2026-11-20",
+      "line": 33,
+      "principle": "reliability",
+      "related_resources": [
+        "variable.enable_confidential_compute",
+        "google_compute_region_instance_template.main"
+      ],
+      "remediation": "Default machine_type to an SEV-capable series (n2d-standard-2) and add a precondition on the template rejecting a non-SEV machine type while enable_confidential_compute is true.",
+      "resource": "variable.machine_type",
+      "severity": "MEDIUM",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "Default machine_type e2-standard-2 cannot run the Confidential VM the module enables by default",
+      "unresolved_since": "2026-11-20"
+    },
+    {
+      "confidence": "high",
+      "explanation": "In google_compute_instance_from_template, setting boot_disk replaces the template's boot disk instead of merging into it. The override carries only kms_key_self_link, so the template's source_image, pd-balanced type and boot_disk_size_gb are dropped and the boot disk has neither a source nor initialize_params; creating the instance (create_instance = true) fails or boots the wrong disk. The comment says the block is there for legibility, but it changes behaviour. CMEK already comes from the template's disk_encryption_key.",
+      "file": "google_compute_instance_from_template.main.tf",
+      "first_seen": "2026-11-20",
+      "fix": "Delete the boot_disk { kms_key_self_link = var.kms_key_name } block (lines 13-15).",
+      "fixable": true,
+      "id": "HOLDEN_AI_002",
+      "last_seen": "2026-11-20",
+      "line": 13,
+      "principle": "reliability",
+      "related_resources": [
+        "google_compute_region_instance_template.main"
+      ],
+      "remediation": "Remove the boot_disk block from the instance; the template disk (with its disk_encryption_key) then applies unchanged.",
+      "resource": "google_compute_instance_from_template.main",
+      "severity": "MEDIUM",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "Instance boot_disk override replaces the template boot disk with one that has no image, type or size",
+      "unresolved_since": "2026-11-20"
+    },
+    {
+      "confidence": "high",
+      "explanation": "Instance templates are immutable, so any change (labels, scopes, CMEK key, or a new image when source_image is resolved from a family, as example/examplea does) replaces the template via create_before_destroy and changes its id. source_instance_template is ForceNew on the instance, so the instance is planned for replacement, but deletion_protection = true is hardcoded and the destroy fails at apply. The module wedges on the first template change after an instance exists. Best fit for reliability: apply fails rather than an outage.",
+      "file": "google_compute_instance_from_template.main.tf",
+      "first_seen": "2026-11-20",
+      "fix": "lifecycle {\n  ignore_changes = [source_instance_template]\n}",
+      "fixable": true,
+      "id": "HOLDEN_AI_003",
+      "last_seen": "2026-11-20",
+      "line": 1,
+      "principle": "reliability",
+      "related_resources": [
+        "google_compute_region_instance_template.main"
+      ],
+      "remediation": "Treat the instance as seeded once from the template: add lifecycle { ignore_changes = [source_instance_template] } so template revisions roll forward for new instances without trying to replace the protected one.",
+      "resource": "google_compute_instance_from_template.main",
+      "severity": "MEDIUM",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "Every template revision forces instance replacement, which the hardcoded deletion_protection then blocks",
+      "unresolved_since": "2026-11-20"
+    },
+    {
+      "confidence": "high",
+      "explanation": "The template is a regional template in var.region and the instance is created in var.zone, but the two are validated separately. A caller who changes region (for example to us-central1) and keeps the default zone europe-west2-a gets an instance that references a regional template outside its region, which the Compute API rejects at apply rather than at plan.",
+      "file": "variables.tf",
+      "first_seen": "2026-11-20",
+      "fix": "lifecycle {\n  precondition {\n    condition     = startswith(var.zone, \"${var.region}-\")\n    error_message = \"var.zone must be a zone in var.region\"\n  }\n}",
+      "fixable": true,
+      "id": "HOLDEN_AI_004",
+      "last_seen": "2026-11-20",
+      "line": 22,
+      "principle": "reliability",
+      "related_resources": [
+        "variable.region",
+        "google_compute_instance_from_template.main"
+      ],
+      "remediation": "Add a lifecycle precondition on the instance requiring var.zone to be in var.region.",
+      "resource": "variable.zone",
+      "severity": "LOW",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "Instance zone is not checked against the regional template's region",
+      "unresolved_since": "2026-11-20"
+    },
+    {
+      "confidence": "high",
+      "explanation": "A Cloud KMS key self-link is an identifier, not a credential. Marking it sensitive hides the value in every plan, so a CMEK key change, which forces template replacement, shows only (sensitive value) and cannot be reviewed. Any output built from it would also have to be sensitive.",
+      "file": "variables.tf",
+      "first_seen": "2026-11-20",
+      "fix": "Delete the line: sensitive   = true",
+      "fixable": true,
+      "id": "HOLDEN_AI_005",
+      "last_seen": "2026-11-20",
+      "line": 79,
+      "principle": "maintainability",
+      "related_resources": [
+        "google_compute_region_instance_template.main"
+      ],
+      "remediation": "Remove sensitive = true from variable.kms_key_name.",
+      "resource": "variable.kms_key_name",
+      "severity": "LOW",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "kms_key_name is marked sensitive although a key self-link is not a secret",
+      "unresolved_since": "2026-11-20"
+    },
+    {
+      "confidence": "high",
+      "explanation": "The template uses name_prefix and create_before_destroy, so consumers such as a managed instance group need a reference that changes when the template is replaced. Only id is exported; self_link_unique, the reference Google recommends for MIG version pinning, is not, so callers cannot pin a specific template revision without a data lookup.",
+      "file": "outputs.tf",
+      "first_seen": "2026-11-20",
+      "fix": "output \"template_self_link_unique\" {\n  value       = google_compute_region_instance_template.main.self_link_unique\n  description = \"Unique self-link of the template revision, for pinning managed instance groups\"\n}",
+      "fixable": true,
+      "id": "HOLDEN_AI_006",
+      "last_seen": "2026-11-20",
+      "line": 1,
+      "principle": "maintainability",
+      "related_resources": [
+        "google_compute_region_instance_template.main"
+      ],
+      "remediation": "Add an output template_self_link_unique = google_compute_region_instance_template.main.self_link_unique.",
+      "resource": "output.template_id",
+      "severity": "INFO",
+      "status": "open",
+      "suppression_reason": null,
+      "title": "Module does not output the template's self_link_unique for pinning managed instance groups",
+      "unresolved_since": "2026-11-20"
+    }
+  ],
+  "scan_date": "2026-11-20T00:00:00Z",
+  "scan_path": ".",
+  "suggested_policies": [
+    {
+      "first_seen": "2026-11-20",
+      "last_seen": "2026-11-20",
+      "rationale": "Confidential compute on a non-SEV machine series is a single-resource attribute clash that applies to any Terraform using these types; HLD_GCP_170 only requires confidential compute to be on and never checks the machine type.",
+      "status": "installed",
+      "yaml": "id: LOCAL_GCP_001\nname: Confidential VM (AMD SEV) templates and instances should use an SEV-capable machine series\nprinciple: reliability\nseverity: MEDIUM\nrationale: |\n  confidential_instance_config.enable_confidential_compute enables AMD SEV,\n  which only the N2D, C2D, C3D and C4D machine series support. Pairing it with\n  another series (e2, n2, n1, ...) is valid to plan but fails when an instance\n  is created, so the template or instance is unusable.\nmessage: |\n  enable_confidential_compute is true but machine_type is not an N2D, C2D, C3D\n  or C4D machine type.\nremediation: |\n  Use an SEV-capable machine type, for example machine_type = \"n2d-standard-2\",\n  or disable confidential compute.\nresources:\n  google_compute_instance:\n    if_equals:\n      path: confidential_instance_config.enable_confidential_compute\n      value: true\n      then:\n        path: machine_type\n        matches: \"^(n2d|c2d|c3d|c4d)-\"\n  google_compute_instance_template:\n    if_equals:\n      path: confidential_instance_config.enable_confidential_compute\n      value: true\n      then:\n        path: machine_type\n        matches: \"^(n2d|c2d|c3d|c4d)-\"\n  google_compute_region_instance_template:\n    if_equals:\n      path: confidential_instance_config.enable_confidential_compute\n      value: true\n      then:\n        path: machine_type\n        matches: \"^(n2d|c2d|c3d|c4d)-\"\n"
+    }
+  ],
+  "suggested_suppressions": []
+}

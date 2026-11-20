@@ -1,0 +1,37 @@
+id: LOCAL_GCP_001
+name: Confidential VM (AMD SEV) templates and instances should use an SEV-capable machine series
+principle: reliability
+severity: MEDIUM
+rationale: |
+  confidential_instance_config.enable_confidential_compute enables AMD SEV,
+  which only the N2D, C2D, C3D and C4D machine series support. Pairing it with
+  another series (e2, n2, n1, ...) is valid to plan but fails when an instance
+  is created, so the template or instance is unusable.
+message: |
+  enable_confidential_compute is true but machine_type is not an N2D, C2D, C3D
+  or C4D machine type.
+remediation: |
+  Use an SEV-capable machine type, for example machine_type = "n2d-standard-2",
+  or disable confidential compute.
+resources:
+  google_compute_instance:
+    if_equals:
+      path: confidential_instance_config.enable_confidential_compute
+      value: true
+      then:
+        path: machine_type
+        matches: "^(n2d|c2d|c3d|c4d)-"
+  google_compute_instance_template:
+    if_equals:
+      path: confidential_instance_config.enable_confidential_compute
+      value: true
+      then:
+        path: machine_type
+        matches: "^(n2d|c2d|c3d|c4d)-"
+  google_compute_region_instance_template:
+    if_equals:
+      path: confidential_instance_config.enable_confidential_compute
+      value: true
+      then:
+        path: machine_type
+        matches: "^(n2d|c2d|c3d|c4d)-"
