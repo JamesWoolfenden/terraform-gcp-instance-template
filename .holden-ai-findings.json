@@ -18,10 +18,10 @@
       "remediation": "Default machine_type to an SEV-capable series (n2d-standard-2) and add a precondition on the template rejecting a non-SEV machine type while enable_confidential_compute is true.",
       "resource": "variable.machine_type",
       "severity": "MEDIUM",
-      "status": "open",
+      "status": "fixed",
       "suppression_reason": null,
       "title": "Default machine_type e2-standard-2 cannot run the Confidential VM the module enables by default",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     },
     {
       "confidence": "high",
@@ -40,10 +40,10 @@
       "remediation": "Remove the boot_disk block from the instance; the template disk (with its disk_encryption_key) then applies unchanged.",
       "resource": "google_compute_instance_from_template.main",
       "severity": "MEDIUM",
-      "status": "open",
+      "status": "fixed",
       "suppression_reason": null,
       "title": "Instance boot_disk override replaces the template boot disk with one that has no image, type or size",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     },
     {
       "confidence": "high",
@@ -62,10 +62,10 @@
       "remediation": "Treat the instance as seeded once from the template: add lifecycle { ignore_changes = [source_instance_template] } so template revisions roll forward for new instances without trying to replace the protected one.",
       "resource": "google_compute_instance_from_template.main",
       "severity": "MEDIUM",
-      "status": "open",
+      "status": "fixed",
       "suppression_reason": null,
       "title": "Every template revision forces instance replacement, which the hardcoded deletion_protection then blocks",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     },
     {
       "confidence": "high",
@@ -85,10 +85,10 @@
       "remediation": "Add a lifecycle precondition on the instance requiring var.zone to be in var.region.",
       "resource": "variable.zone",
       "severity": "LOW",
-      "status": "open",
+      "status": "fixed",
       "suppression_reason": null,
       "title": "Instance zone is not checked against the regional template's region",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     },
     {
       "confidence": "high",
@@ -107,10 +107,10 @@
       "remediation": "Remove sensitive = true from variable.kms_key_name.",
       "resource": "variable.kms_key_name",
       "severity": "LOW",
-      "status": "open",
+      "status": "fixed",
       "suppression_reason": null,
       "title": "kms_key_name is marked sensitive although a key self-link is not a secret",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     },
     {
       "confidence": "high",
@@ -129,10 +129,10 @@
       "remediation": "Add an output template_self_link_unique = google_compute_region_instance_template.main.self_link_unique.",
       "resource": "output.template_id",
       "severity": "INFO",
-      "status": "open",
-      "suppression_reason": null,
+      "status": "suppressed",
+      "suppression_reason": "Not applicable: google_compute_region_instance_template exports no self_link_unique (only the global template does), and name_prefix plus create_before_destroy already give each template revision a unique id/self_link that MIGs can pin to.",
       "title": "Module does not output the template's self_link_unique for pinning managed instance groups",
-      "unresolved_since": "2026-11-20"
+      "unresolved_since": null
     }
   ],
   "scan_date": "2026-11-20T00:00:00Z",

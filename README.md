@@ -67,7 +67,7 @@ No modules.
 | <a name="input_enable_confidential_compute"></a> [enable\_confidential\_compute](#input\_enable\_confidential\_compute) | Whether instances run as Confidential VMs. Requires a machine type and image that support it | `bool` | `true` | no |
 | <a name="input_kms_key_name"></a> [kms\_key\_name](#input\_kms\_key\_name) | Self-link of the Cloud KMS key used to encrypt boot disks (CMEK) | `string` | n/a | yes |
 | <a name="input_labels"></a> [labels](#input\_labels) | Labels applied to the template and the instance | `map(string)` | `{}` | no |
-| <a name="input_machine_type"></a> [machine\_type](#input\_machine\_type) | Machine type of the template | `string` | `"e2-standard-2"` | no |
+| <a name="input_machine_type"></a> [machine\_type](#input\_machine\_type) | Machine type of the template. Must be an AMD SEV capable series (N2D, C2D, C3D or C4D) while enable\_confidential\_compute is true | `string` | `"n2d-standard-2"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Base name of the instance template and the instance created from it | `string` | n/a | yes |
 | <a name="input_oauth_scopes"></a> [oauth\_scopes](#input\_oauth\_scopes) | OAuth scopes granted to the attached service account. cloud-platform is rejected, grant IAM roles instead | `list(string)` | <pre>[<br/>  "https://www.googleapis.com/auth/devstorage.read_only",<br/>  "https://www.googleapis.com/auth/logging.write",<br/>  "https://www.googleapis.com/auth/monitoring.write"<br/>]</pre> | no |
 | <a name="input_region"></a> [region](#input\_region) | Region of the instance template | `string` | `"europe-west2"` | no |

@@ -32,8 +32,8 @@ variable "zone" {
 
 variable "machine_type" {
   type        = string
-  description = "Machine type of the template"
-  default     = "e2-standard-2"
+  description = "Machine type of the template. Must be an AMD SEV capable series (N2D, C2D, C3D or C4D) while enable_confidential_compute is true"
+  default     = "n2d-standard-2"
 
   validation {
     condition     = length(trimspace(var.machine_type)) > 0
@@ -79,7 +79,6 @@ variable "service_account" {
 variable "kms_key_name" {
   type        = string
   description = "Self-link of the Cloud KMS key used to encrypt boot disks (CMEK)"
-  sensitive   = true
 
   validation {
     condition     = length(trimspace(var.kms_key_name)) > 0

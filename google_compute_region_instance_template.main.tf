@@ -51,5 +51,10 @@ resource "google_compute_region_instance_template" "main" {
 
   lifecycle {
     create_before_destroy = true
+
+    precondition {
+      condition     = !var.enable_confidential_compute || can(regex("^(n2d|c2d|c3d|c4d)-", var.machine_type))
+      error_message = "var.machine_type must be an N2D, C2D, C3D or C4D machine type when var.enable_confidential_compute is true"
+    }
   }
 }
